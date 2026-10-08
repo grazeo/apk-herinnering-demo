@@ -113,7 +113,13 @@
   #rows tr { cursor: pointer; }
   #rows tr:hover td { background: var(--auto-bg); }
   #rows tr.gekozen td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
-  h3.sub { font-size: 1.05rem; margin: 26px 0 6px; }
+  details.garage-info { margin-top: 18px; }
+  details.garage-info summary { cursor: pointer; color: var(--accent); font-weight: 600; padding: 6px 0; }
+  details.garage-info[open] summary { margin-bottom: 8px; }
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tabs button { min-height: 44px; padding: 8px 16px; background: transparent; color: var(--text); font-weight: 600; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); }
+  table.overzicht { min-width: 480px; margin: 6px 0 14px; }
   table.garages { min-width: 560px; }
   a { color: var(--accent); }
 
@@ -162,7 +168,9 @@
     button { width: 100%; }
     .plate-input { max-width: none; }
     .flow { grid-template-columns: 1fr; }
-    table, table.garages { min-width: 0; }
+    table, table.garages, table.overzicht { min-width: 0; }
+    .tabs { display: flex; flex-wrap: nowrap; }
+    .tabs button { flex: 1 1 auto; width: auto; font-size: .9rem; padding: 8px 6px; }
     table, tbody, tr, td { display: block; }
     thead { display: none; }
     tr { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
@@ -225,7 +233,8 @@
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <h3 class="sub">Garage per merk</h3>
+    <details class="garage-info">
+    <summary>Welke garage staat er in de mail?</summary>
     <p>Staat er al in, hier hoef je niets mee. Het merk haalt het systeem zelf bij de RDW, dus elke monteur krijgt vanzelf de juiste garage in zijn mail.</p>
     <div class="table-wrap">
       <table class="garages">
@@ -233,10 +242,16 @@
         <tbody id="garages"></tbody>
       </table>
     </div>
+    </details>
   </section>
 
   <section class="card">
-    <h2>Deze mail krijgt de monteur</h2>
+    <h2>Wat er in de mailbox komt</h2>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-monteur" aria-selected="true" aria-controls="paneel-monteur">Monteur</button>
+      <button type="button" role="tab" id="tab-beheer" aria-selected="false" aria-controls="paneel-beheer">Wagenparkbeheerder</button>
+    </div>
+    <div id="paneel-monteur" role="tabpanel" aria-labelledby="tab-monteur">
     <p>30, 14 en 7 dagen voor de vervaldatum. Zonder dat iemand eraan hoeft te denken.</p>
     <div class="mail">
       <div class="mail-head">
@@ -247,6 +262,19 @@
       </div>
       <div class="mail-body" id="m-body"></div>
     </div>
+    </div>
+    <div id="paneel-beheer" role="tabpanel" aria-labelledby="tab-beheer" hidden>
+    <p>Eén keer per maand: alle auto's die binnen 60 dagen gekeurd moeten worden.</p>
+    <div class="mail">
+      <div class="mail-head">
+        <div><b>Van</b> APK-herinnering wagenpark</div>
+        <div><b>Aan</b> wagenparkbeheerder@voorbeeld.nl</div>
+        <div><b>Datum</b> <span id="o-date"></span></div>
+        <div><b>Onderwerp</b> <span id="o-subject"></span></div>
+      </div>
+      <div class="mail-body" id="o-body"></div>
+    </div>
+    </div>
   </section>
 
   <section class="card">
@@ -255,16 +283,8 @@
       <li>Nu stuurt de leasemaatschappij één brief naar het huisadres. Komt die niet aan of raakt hij zoek, dan weet niemand het. Dit systeem mailt drie keer naar het werkadres.</li>
       <li>Auto's die niet via de leasemaatschappij lopen, krijgen nu helemaal geen herinnering. Die gaan hier gewoon mee.</li>
       <li>De wagenparkbeheerder ziet zelf welke auto's eraan komen, in plaats van het achteraf te horen.</li>
+      <li>Alles draait in Microsoft Teams, in de eigen omgeving van KIS. Niet bij een externe partij, en niet afhankelijk van één persoon.</li>
     </ul>
-  </section>
-
-  <section class="card">
-    <h2>Achter de schermen</h2>
-    <ol class="steps">
-      <li>De lijst staat in Microsoft Teams, in de eigen omgeving van KIS. Niet bij een externe partij.</li>
-      <li>Elke ochtend haalt Power Automate per kenteken de actuele APK-datum op bij de RDW.</li>
-      <li>Lukt een herinnering een dag niet, dan gaat hij de dag erna alsnog. Nooit dubbel.</li>
-    </ol>
   </section>
 
   <footer>
@@ -347,13 +367,61 @@
 
   let gekozen = null;
 
+  function kiesTab(welk) {
+    ["monteur", "beheer"].forEach((t) => {
+      document.getElementById("tab-" + t).setAttribute("aria-selected", String(t === welk));
+      document.getElementById("paneel-" + t).hidden = t !== welk;
+    });
+  }
+  document.getElementById("tab-monteur").addEventListener("click", () => kiesTab("monteur"));
+  document.getElementById("tab-beheer").addEventListener("click", () => kiesTab("beheer"));
+
+  // Maandoverzicht voor de wagenparkbeheerder: alles wat binnen 60 dagen verloopt (of al verlopen is).
+  function toonOverzicht() {
+    const binnenkort = rijen.filter((r) => dagenTot(r.datum) <= 60).sort((a, b) => a.datum - b.datum);
+    document.getElementById("o-date").textContent = datumNL(vandaag);
+    document.getElementById("o-subject").textContent =
+      "APK-overzicht: " + binnenkort.length + (binnenkort.length === 1 ? " auto" : " auto's") + " binnen 60 dagen";
+    const body = document.getElementById("o-body");
+    body.textContent = "";
+    body.append(el("p", "", "Hoi,"));
+    if (binnenkort.length === 0) {
+      body.append(el("p", "", "Er zijn geen auto's die binnen 60 dagen gekeurd moeten worden."));
+    } else {
+      body.append(el("p", "", "Deze auto's moeten binnen 60 dagen gekeurd worden. De monteurs krijgen zelf ook herinneringen; dit overzicht is voor jouw informatie."));
+      const wrap = el("div", "table-wrap");
+      const t = el("table", "overzicht");
+      const kop = el("tr");
+      ["Kenteken", "Monteur", "APK geldig tot", "Status"].forEach((h) => kop.append(el("th", "", h)));
+      const thead = el("thead"); thead.append(kop);
+      const tb = el("tbody");
+      binnenkort.forEach((r) => {
+        const st = status(dagenTot(r.datum));
+        const tr = el("tr");
+        const c1 = el("td"); c1.append(el("span", "plate", r.kenteken));
+        const c4 = el("td"); c4.append(el("span", "pill " + st.cls, st.label));
+        [c1, el("td", "", r.naam), el("td", "", datumNL(r.datum)), c4].forEach((td, i) => {
+          td.dataset.label = ["Kenteken", "Monteur", "APK geldig tot", "Status"][i];
+          tr.append(td);
+        });
+        tb.append(tr);
+      });
+      t.append(thead, tb); wrap.append(t); body.append(wrap);
+    }
+    body.append(
+      el("p", "", "Is een auto al gekeurd, dan verdwijnt hij vanzelf uit dit overzicht."),
+      el("p", "who", "Dit is een automatisch bericht van het wagenpark.")
+    );
+  }
+
   function toonLijst(nieuw) {
+    toonOverzicht();
     const tbody = document.getElementById("rows");
     tbody.textContent = "";
     rijen.slice().sort((a, b) => a.datum - b.datum).forEach((r) => {
       const st = status(dagenTot(r.datum));
       const tr = el("tr", (r === nieuw ? "new " : "") + (r === gekozen ? "gekozen" : ""));
-      tr.addEventListener("click", () => { toonMail(r); toonLijst(); });
+      tr.addEventListener("click", () => { toonMail(r); kiesTab("monteur"); toonLijst(); });
       const td1 = el("td"); td1.append(el("span", "plate", r.kenteken));
       const td2 = el("td", "", r.naam);
       const td3 = el("td", "mail-cell", r.email);
@@ -481,6 +549,7 @@
       msg.textContent = "";
       toonResultaat(r, auto);
       toonMail(r);
+      kiesTab("monteur");
       toonLijst(r);
     } catch (err) {
       msg.className = "msg err";
