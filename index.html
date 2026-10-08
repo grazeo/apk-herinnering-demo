@@ -229,7 +229,7 @@
     <p>Ook één keer invullen. Het merk haalt het systeem zelf bij de RDW, dus elke monteur krijgt vanzelf de juiste garage in zijn mail.</p>
     <div class="table-wrap">
       <table class="garages">
-        <thead><tr><th>Merk</th><th>Garage voor APK-afspraak</th><th>Telefoon</th><th>Online afspraak</th></tr></thead>
+        <thead><tr><th>Merk</th><th>Garage voor APK-afspraak</th><th>Telefoon</th><th>Website</th></tr></thead>
         <tbody id="garages"></tbody>
       </table>
     </div>
@@ -319,13 +319,13 @@
   // Garage per merk (RDW-merknaam). Gegevens van de sites van de dealers, 09-10-2026.
   const garages = {
     VOLKSWAGEN: { merk: "Volkswagen", naam: "Van den Brug Heerenveen", tel: "0513 633 054",
-                  url: "https://www.vandenbrug.nl/werkplaatsplanner/vehicle", label: "vandenbrug.nl" },
+                  url: "https://vandenbrug.nl/vestigingen", label: "vandenbrug.nl/vestigingen" },
     OPEL:       { merk: "Opel", naam: "Haaima Heerenveen", tel: "0513 62 21 00",
-                  url: "https://www.haaima.nl/werkplaatsafspraak/", label: "haaima.nl" },
+                  url: "https://www.haaima.nl/vestigingen/", label: "haaima.nl/vestigingen" },
   };
 
   function link(g) {
-    const a = el("a", "", g.label + "/afspraak");
+    const a = el("a", "", g.label);
     a.href = g.url; a.target = "_blank"; a.rel = "noopener";
     return a;
   }
@@ -336,7 +336,7 @@
       const tr = el("tr");
       const td4 = el("td"); td4.append(link(g));
       [el("td", "", g.merk), el("td", "", g.naam), el("td", "", g.tel), td4].forEach((td, i) => {
-        td.dataset.label = ["Merk", "Garage", "Telefoon", "Online afspraak"][i];
+        td.dataset.label = ["Merk", "Garage", "Telefoon", "Website"][i];
         tr.append(td);
       });
       tbody.append(tr);
@@ -388,7 +388,7 @@
         : "De APK van je auto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak; vaak kan de APK samen met een onderhoudsbeurt."));
     const g = garages[r.merk];
     if (g) {
-      const p = el("p", "", "Afspraak maken bij " + g.naam + ": bel " + g.tel + " of plan online via ");
+      const p = el("p", "", "Afspraak maken bij " + g.naam + ": bel " + g.tel + " of kijk op ");
       p.append(link(g), ".");
       body.append(p);
     } else {
