@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APK-herinnering leaseauto's</title>
+<meta name="description" content="Voorbeeld: APK-datums van leaseauto's automatisch ophalen bij RDW en berijders op tijd herinneren.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23f2c200'/><text x='16' y='22' font-size='13' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23111'>APK</text></svg>">
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1d2228;
+    --muted: #5b6470;
+    --line: #dde1e6;
+    --accent: #0f5fb4;
+    --accent-text: #ffffff;
+    --plate: #f2c200;
+    --plate-text: #111111;
+    --ok-bg: #e3f4e8;   --ok: #1d7a3a;
+    --soon-bg: #fff1dc; --soon: #a85b00;
+    --due-bg: #fde4e2;  --due: #b42318;
+    --gone-bg: #b42318; --gone: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181c; --card: #1f2329; --text: #eef0f3; --muted: #a3abb5; --line: #343a42;
+      --accent: #4a9be8; --accent-text: #0b1520;
+      --ok-bg: #173a24;   --ok: #7fd99a;
+      --soon-bg: #3d2a0e; --soon: #ffc06b;
+      --due-bg: #45191a;  --due: #ff9b93;
+      --gone-bg: #e5534b; --gone: #1a0a09;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181c; --card: #1f2329; --text: #eef0f3; --muted: #a3abb5; --line: #343a42;
+    --accent: #4a9be8; --accent-text: #0b1520;
+    --ok-bg: #173a24;   --ok: #7fd99a;
+    --soon-bg: #3d2a0e; --soon: #ffc06b;
+    --due-bg: #45191a;  --due: #ff9b93;
+    --gone-bg: #e5534b; --gone: #1a0a09;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 18px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.25rem; margin: 0 0 12px; }
+  p { margin: 0 0 12px; }
+  .lead { color: var(--muted); margin-bottom: 22px; }
+  .tag {
+    display: inline-block; font-size: .8rem; font-weight: 600; letter-spacing: .02em;
+    color: var(--muted); border: 1px solid var(--line); border-radius: 999px;
+    padding: 2px 10px; margin-bottom: 14px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px; margin-bottom: 20px;
+  }
+
+  /* Kenteken invoeren */
+  form { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; }
+  .plate-input {
+    display: flex; align-items: stretch; border: 3px solid #111; border-radius: 8px;
+    overflow: hidden; background: var(--plate); flex: 1 1 260px; max-width: 340px;
+  }
+  .plate-input .nl {
+    background: #003399; color: #fff; font-size: .8rem; font-weight: 700;
+    display: flex; align-items: flex-end; padding: 0 7px 6px;
+  }
+  .plate-input input {
+    border: 0; background: transparent; color: var(--plate-text); width: 100%;
+    font: 700 1.6rem/1 "Arial Narrow", Arial, sans-serif; letter-spacing: .06em;
+    text-transform: uppercase; padding: 12px 12px; text-align: center;
+  }
+  .plate-input input:focus { outline: none; }
+  .plate-input:focus-within { box-shadow: 0 0 0 3px var(--accent); }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 8px; cursor: pointer;
+    background: var(--accent); color: var(--accent-text); padding: 12px 24px; min-height: 56px;
+  }
+  button:disabled { opacity: .6; cursor: wait; }
+  .hint { color: var(--muted); font-size: .9rem; margin-top: 10px; }
+  .msg { margin-top: 14px; font-weight: 600; }
+  .msg.err { color: var(--due); }
+
+  /* Resultaat */
+  .result { display: none; margin-top: 18px; border-radius: 12px; padding: 18px; }
+  .result.show { display: block; }
+  .result .car { font-size: .95rem; color: inherit; opacity: .85; }
+  .result .big { font-size: 1.45rem; font-weight: 700; margin: 2px 0 6px; }
+  .result ul { margin: 8px 0 0; padding-left: 20px; }
+  .st-ok   { background: var(--ok-bg);   color: var(--ok); }
+  .st-soon { background: var(--soon-bg); color: var(--soon); }
+  .st-due  { background: var(--due-bg);  color: var(--due); }
+  .st-gone { background: var(--gone-bg); color: var(--gone); }
+
+  /* Lijst zoals in Teams */
+  .list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .list-head span { color: var(--muted); font-size: .9rem; }
+  .table-wrap { overflow-x: auto; margin: 0 -4px; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; min-width: 520px; }
+  th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--line); }
+  th { font-size: .82rem; color: var(--muted); font-weight: 600; }
+  tr.new td { animation: flash 2.4s ease-out; }
+  @keyframes flash { from { background: var(--soon-bg); } to { background: transparent; } }
+  .plate {
+    display: inline-block; background: var(--plate); color: var(--plate-text);
+    font: 700 .9rem/1 Arial, sans-serif; letter-spacing: .05em;
+    padding: 5px 8px; border-radius: 4px; border: 1px solid #111; white-space: nowrap;
+  }
+  .pill { display: inline-block; border-radius: 999px; padding: 3px 11px; font-weight: 600; font-size: .85rem; white-space: nowrap; }
+  .who { color: var(--muted); }
+
+  /* Voorbeeldmail */
+  .mail { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .mail-head { padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: .92rem; }
+  .mail-head div { margin: 2px 0; }
+  .mail-head b { display: inline-block; min-width: 62px; color: var(--muted); font-weight: 600; }
+  .mail-body { padding: 16px; }
+
+  .steps { margin: 0; padding-left: 22px; }
+  .steps li { margin-bottom: 8px; }
+  footer { color: var(--muted); font-size: .85rem; margin-top: 28px; }
+  footer a { color: inherit; }
+
+  @media (max-width: 560px) {
+    body { font-size: 17px; }
+    h1 { font-size: 1.55rem; }
+    .card { padding: 18px 16px; }
+    button { width: 100%; }
+    .plate-input { max-width: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <span class="tag">VOORBEELD</span>
+  <h1>APK-herinnering voor leaseauto's</h1>
+  <p class="lead">Nooit meer een verlopen APK. Per auto vul je één keer het kenteken en het mailadres van de berijder in. Daarna gaat alles vanzelf.</p>
+
+  <section class="card">
+    <h2>Probeer het zelf</h2>
+    <p>Vul het kenteken van je eigen auto in. De APK-datum komt rechtstreeks van de RDW.</p>
+    <form id="form" autocomplete="off">
+      <label class="plate-input" for="kenteken">
+        <span class="nl">NL</span>
+        <input id="kenteken" name="kenteken" inputmode="text" maxlength="10" placeholder="XX-123-X" aria-label="Kenteken" required>
+      </label>
+      <button id="zoek" type="submit">Opzoeken</button>
+    </form>
+    <p class="hint">Streepjes en spaties mogen, die worden vanzelf weggelaten.</p>
+    <p id="msg" class="msg" role="status" aria-live="polite"></p>
+
+    <div id="result" class="result" aria-live="polite">
+      <div class="car" id="r-car"></div>
+      <div class="big" id="r-big"></div>
+      <div id="r-sub"></div>
+      <ul id="r-reminders"></ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="list-head">
+      <h2>Zo ziet de lijst eruit in Teams</h2>
+      <span>Voorbeeldgegevens</span>
+    </div>
+    <p>Kenteken en berijder vul je één keer in. De APK-datum en de kleur worden elke dag vanzelf bijgewerkt, ook na een keuring.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Kenteken</th><th>Berijder</th><th>APK geldig tot</th><th>Status</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Deze mail krijgt de berijder</h2>
+    <p>30, 14 en 7 dagen voor de vervaldatum. Zonder dat iemand eraan hoeft te denken.</p>
+    <div class="mail">
+      <div class="mail-head">
+        <div><b>Van</b> APK-herinnering wagenpark</div>
+        <div><b>Aan</b> <span id="m-to">j.devries@voorbeeld.nl</span></div>
+        <div><b>Datum</b> <span id="m-date"></span></div>
+        <div><b>Onderwerp</b> <span id="m-subject"></span></div>
+      </div>
+      <div class="mail-body" id="m-body"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Hoe het werkt</h2>
+    <ol class="steps">
+      <li>Alles staat in een lijst in Microsoft Teams, in de eigen omgeving van het bedrijf.</li>
+      <li>Elke ochtend haalt Power Automate per kenteken de actuele APK-datum op bij de RDW.</li>
+      <li>De berijder krijgt 30, 14 en 7 dagen vooraf een herinnering. Lukt dat een dag niet, dan gaat hij de dag erna alsnog.</li>
+      <li>De wagenparkbeheerder krijgt één keer per maand een overzicht van alle auto's die binnen 60 dagen verlopen.</li>
+    </ol>
+  </section>
+
+  <footer>
+    Op deze pagina wordt niets opgeslagen. Het kenteken gaat rechtstreeks van je browser naar
+    <a href="https://opendata.rdw.nl/" rel="noopener">RDW Open Data</a>.
+  </footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  const RDW = "https://opendata.rdw.nl/resource/m9d7-ebf2.json";
+  const DAG = 86400000;
+  const maanden = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+
+  const vandaag = (() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); })();
+  const plusDagen = (n) => new Date(vandaag.getTime() + n * DAG);
+  const datumNL = (d) => d.getDate() + " " + maanden[d.getMonth()] + " " + d.getFullYear();
+  const dagenTot = (d) => Math.round((d - vandaag) / DAG);
+
+  // Nederlandse kentekens: groepen letters/cijfers scheiden met streepjes.
+  function opmaak(k) {
+    const groepen = k.match(/[A-Z]+|[0-9]+/g) || [k];
+    if (groepen.length === 3) return groepen.join("-");
+    // Oudere kentekens (AB-12-34) hebben maar twee groepen: dan 2-2-2.
+    return k.length === 6 ? k.slice(0, 2) + "-" + k.slice(2, 4) + "-" + k.slice(4) : k;
+  }
+
+  function status(dagen) {
+    if (dagen < 0)   return { cls: "st-gone", label: "Verlopen" };
+    if (dagen <= 7)  return { cls: "st-due",  label: "Deze week" };
+    if (dagen <= 30) return { cls: "st-soon", label: "Binnenkort" };
+    return { cls: "st-ok", label: "In orde" };
+  }
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // Voorbeeldregels. Kentekens met klinkers bestaan in Nederland niet,
+  // dus deze verwijzen niet naar een echte auto.
+  const rijen = [
+    { kenteken: "UA-123-E", berijder: "Jan de Vries",  datum: plusDagen(214) },
+    { kenteken: "OE-45-AI", berijder: "Sanne Bakker",  datum: plusDagen(23)  },
+    { kenteken: "IA-678-O", berijder: "Pieter Mulder", datum: plusDagen(5)   },
+  ];
+
+  function toonLijst(nieuw) {
+    const tbody = document.getElementById("rows");
+    tbody.textContent = "";
+    rijen.slice().sort((a, b) => a.datum - b.datum).forEach((r) => {
+      const st = status(dagenTot(r.datum));
+      const tr = el("tr", r === nieuw ? "new" : "");
+      const td1 = el("td"); td1.append(el("span", "plate", r.kenteken));
+      const td2 = el("td", r.eigen ? "" : "who", r.berijder);
+      const td3 = el("td", "", datumNL(r.datum));
+      const td4 = el("td"); td4.append(el("span", "pill " + st.cls, st.label));
+      tr.append(td1, td2, td3, td4);
+      tbody.append(tr);
+    });
+  }
+
+  function toonMail(r, auto) {
+    const dagen = dagenTot(r.datum);
+    const verlopen = dagen < 0;
+    // De eerstvolgende herinnering; is ook die van 7 dagen al geweest, dan die.
+    const v = [30, 14, 7].find((x) => x <= dagen) || 7;
+    const verstuurd = verlopen ? vandaag : new Date(r.datum.getTime() - v * DAG);
+    document.getElementById("m-to").textContent = r.eigen ? "jij@voorbeeld.nl" : "j.devries@voorbeeld.nl";
+    document.getElementById("m-date").textContent = datumNL(verstuurd);
+    document.getElementById("m-subject").textContent = verlopen
+      ? "APK van " + r.kenteken + " is verlopen"
+      : "APK van " + r.kenteken + " verloopt over " + v + " dagen";
+    const body = document.getElementById("m-body");
+    body.textContent = "";
+    const voornaam = r.eigen ? "" : " " + r.berijder.split(" ")[0];
+    const welkeAuto = auto ? " (" + auto + ", " + r.kenteken + ")" : " " + r.kenteken;
+    body.append(
+      el("p", "", "Hoi" + voornaam + ","),
+      el("p", "", verlopen
+        ? "De APK van je leaseauto" + welkeAuto + " is verlopen op " + datumNL(r.datum) + ". Rijd er niet meer mee de weg op en plan zo snel mogelijk een keuring."
+        : "De APK van je leaseauto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak bij de dealer."),
+      el("p", "", "Is de auto al gekeurd? Dan hoef je niets te doen. Zodra de RDW de nieuwe datum heeft, stoppen deze herinneringen vanzelf."),
+      el("p", "who", "Dit is een automatisch bericht van het wagenpark.")
+    );
+  }
+
+  function toonResultaat(r, auto) {
+    const dagen = dagenTot(r.datum);
+    const st = status(dagen);
+    const box = document.getElementById("result");
+    box.className = "result show " + st.cls;
+    document.getElementById("r-car").textContent = r.kenteken + (auto ? " · " + auto : "");
+    document.getElementById("r-big").textContent =
+      dagen < 0 ? "APK verlopen op " + datumNL(r.datum) : "APK geldig tot " + datumNL(r.datum);
+    document.getElementById("r-sub").textContent =
+      dagen < 0 ? "Dat is " + (-dagen) + (dagen === -1 ? " dag" : " dagen") + " geleden. De berijder had drie herinneringen gekregen."
+      : dagen === 0 ? "Dat is vandaag."
+      : "Nog " + dagen + (dagen === 1 ? " dag." : " dagen.");
+    const ul = document.getElementById("r-reminders");
+    ul.textContent = "";
+    if (dagen >= 0) {
+      [30, 14, 7].forEach((v) => {
+        const wanneer = new Date(r.datum.getTime() - v * DAG);
+        const tekst = dagenTot(wanneer) < 0
+          ? "Herinnering " + v + " dagen vooraf: al verstuurd op " + datumNL(wanneer)
+          : "Herinnering " + v + " dagen vooraf: " + datumNL(wanneer);
+        ul.append(el("li", "", tekst));
+      });
+    }
+  }
+
+  const form = document.getElementById("form");
+  const input = document.getElementById("kenteken");
+  const knop = document.getElementById("zoek");
+  const msg = document.getElementById("msg");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const k = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    msg.className = "msg"; msg.textContent = "";
+    if (k.length !== 6) {
+      msg.className = "msg err";
+      msg.textContent = "Een kenteken heeft 6 letters en cijfers, bijvoorbeeld XX-123-X.";
+      return;
+    }
+    knop.disabled = true; msg.textContent = "Even opzoeken bij de RDW…";
+    try {
+      const url = RDW + "?kenteken=" + encodeURIComponent(k) +
+        "&$select=merk,handelsbenaming,vervaldatum_apk_dt";
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        msg.className = "msg err";
+        msg.textContent = "De RDW kent kenteken " + opmaak(k) + " niet. Klopt het kenteken?";
+        return;
+      }
+      const v = data[0];
+      if (!v.vervaldatum_apk_dt) {
+        msg.className = "msg err";
+        msg.textContent = "De RDW heeft voor " + opmaak(k) + " geen APK-vervaldatum.";
+        return;
+      }
+      const [j, m, d] = v.vervaldatum_apk_dt.slice(0, 10).split("-").map(Number);
+      const auto = [v.merk, v.handelsbenaming].filter(Boolean).map((s) =>
+        s.toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase())).join(" ");
+      const kent = opmaak(k);
+      let r = rijen.find((x) => x.kenteken === kent);
+      if (!r) { r = { kenteken: kent, berijder: "Jij", eigen: true }; rijen.push(r); }
+      r.datum = new Date(j, m - 1, d);
+      msg.textContent = "";
+      toonResultaat(r, auto);
+      toonLijst(r);
+      toonMail(r, auto);
+    } catch (err) {
+      msg.className = "msg err";
+      msg.textContent = "De RDW is nu niet bereikbaar. Probeer het over een paar minuten opnieuw.";
+    } finally {
+      knop.disabled = false;
+    }
+  });
+
+  toonLijst();
+  toonMail(rijen[0], "");
+})();
+</script>
+</body>
+</html>
