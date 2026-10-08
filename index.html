@@ -133,6 +133,9 @@
     .card { padding: 18px 16px; }
     button { width: 100%; }
     .plate-input { max-width: none; }
+    table { min-width: 0; font-size: .88rem; }
+    th, td { padding: 10px 4px; }
+    th:nth-child(2), td:nth-child(2) { display: none; }
   }
 </style>
 </head>
@@ -350,9 +353,12 @@
         return;
       }
       const [j, m, d] = v.vervaldatum_apk_dt.slice(0, 10).split("-").map(Number);
-      const auto = [v.merk, v.handelsbenaming].filter(Boolean).map((s) =>
-        s.toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase())).join(" ");
+      // De RDW zet het merk vaak ook in de handelsbenaming ("NISSAN MICRA").
+      const merk = v.merk || "", model = v.handelsbenaming || "";
+      const auto = (model.toUpperCase().startsWith(merk.toUpperCase()) ? model : (merk + " " + model).trim())
+        .toLowerCase().replace(/(^|[\s-])\S/g, (c) => c.toUpperCase());
       const kent = opmaak(k);
+      input.value = kent;
       let r = rijen.find((x) => x.kenteken === kent);
       if (!r) { r = { kenteken: kent, berijder: "Jij", eigen: true }; rijen.push(r); }
       r.datum = new Date(j, m - 1, d);
