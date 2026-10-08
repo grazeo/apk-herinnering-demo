@@ -318,7 +318,7 @@
 
   // Garage per merk (RDW-merknaam). Gegevens van de sites van de dealers, 09-10-2026.
   const garages = {
-    VOLKSWAGEN: { merk: "Volkswagen", naam: "Van den Brug Heerenveen", tel: "0513 633 054",
+    VOLKSWAGEN: { merk: "Volkswagen", naam: "Van den Brug", keuze: true, vestiging: "Heerenveen", tel: "0513 633 054",
                   url: "https://vandenbrug.nl/vestigingen", label: "vandenbrug.nl/vestigingen" },
     OPEL:       { merk: "Opel", naam: "Haaima Heerenveen", tel: "0513 62 21 00",
                   url: "https://www.haaima.nl/vestigingen/", label: "haaima.nl/vestigingen" },
@@ -335,7 +335,9 @@
     Object.values(garages).forEach((g) => {
       const tr = el("tr");
       const td4 = el("td"); td4.append(link(g));
-      [el("td", "", g.merk), el("td", "", g.naam), el("td", "", g.tel), td4].forEach((td, i) => {
+      const naam = g.keuze ? g.naam + ", elke vestiging" : g.naam;
+      const tel = g.keuze ? g.tel + " (" + g.vestiging + ")" : g.tel;
+      [el("td", "", g.merk), el("td", "", naam), el("td", "", tel), td4].forEach((td, i) => {
         td.dataset.label = ["Merk", "Garage", "Telefoon", "Website"][i];
         tr.append(td);
       });
@@ -388,7 +390,9 @@
         : "De APK van je auto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak; vaak kan de APK samen met een onderhoudsbeurt."));
     const g = garages[r.merk];
     if (g) {
-      const p = el("p", "", "Afspraak maken bij " + g.naam + ": bel " + g.tel + " of kijk op ");
+      const p = g.keuze
+        ? el("p", "", "Maak een afspraak bij " + g.naam + ", bij een vestiging naar keuze. Bijvoorbeeld " + g.vestiging + ": " + g.tel + ". Alle vestigingen staan op ")
+        : el("p", "", "Afspraak maken bij " + g.naam + ": bel " + g.tel + " of kijk op ");
       p.append(link(g), ".");
       body.append(p);
     } else {
@@ -396,6 +400,8 @@
     }
     if (r.merk === "VOLKSWAGEN") {
       body.append(el("p", "", "Vragen over je leaseauto? Bel de berijdersdesk van Wittebrug: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."));
+    } else if (g) {
+      body.append(el("p", "", "Vragen over je leaseauto? Neem contact op met je leasemaatschappij."));
     }
     body.append(
       el("p", "", "Is de auto al gekeurd? Dan hoef je niets te doen. Zodra de RDW de nieuwe datum heeft, stoppen deze herinneringen vanzelf."),
