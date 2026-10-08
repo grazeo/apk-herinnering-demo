@@ -110,6 +110,12 @@
   th.g-auto, th.auto, td.auto { background: var(--auto-bg); }
   th.g-in { color: var(--accent); }
   .mail-cell { color: var(--muted); font-size: .88rem; }
+  #rows tr { cursor: pointer; }
+  #rows tr:hover td { background: var(--auto-bg); }
+  #rows tr.gekozen td:first-child { box-shadow: inset 4px 0 0 var(--accent); }
+  h3.sub { font-size: 1.05rem; margin: 26px 0 6px; }
+  table.garages { min-width: 560px; }
+  a { color: var(--accent); }
 
   /* Drie stappen */
   .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
@@ -156,7 +162,7 @@
     button { width: 100%; }
     .plate-input { max-width: none; }
     .flow { grid-template-columns: 1fr; }
-    table { min-width: 0; }
+    table, table.garages { min-width: 0; }
     table, tbody, tr, td { display: block; }
     thead { display: none; }
     tr { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
@@ -176,7 +182,7 @@
   <section class="card">
     <h2>Het enige wat er moet gebeuren</h2>
     <div class="flow">
-      <div class="stap jij"><span class="nr">1</span><b>Eén keer invullen</b><p>Per auto: kenteken, naam van de monteur en e-mailadres. Dat is alles.</p></div>
+      <div class="stap jij"><span class="nr">1</span><b>Eén keer invullen</b><p>Per auto: kenteken, naam van de monteur en e-mailadres. En per merk één keer de garage. Dat is alles.</p></div>
       <div class="stap"><span class="nr">2</span><b>Elke dag vanzelf</b><p>Het systeem haalt de APK-datum op bij de RDW. Ook na een keuring, zonder dat iemand iets bijwerkt.</p></div>
       <div class="stap"><span class="nr">3</span><b>Op tijd een seintje</b><p>De monteur krijgt 30, 14 en 7 dagen vooraf een mail. De wagenparkbeheerder krijgt elke maand een overzicht.</p></div>
     </div>
@@ -209,7 +215,7 @@
       <h2>De lijst in Teams</h2>
       <span>Voorbeeldgegevens</span>
     </div>
-    <p>Dit is de enige pagina die iemand ooit invult. De blauwe kolommen vullen zichzelf, elke dag opnieuw.</p>
+    <p>Dit is de enige pagina die iemand ooit invult. De blauwe kolommen vullen zichzelf, elke dag opnieuw. Klik op een regel om de mail van die monteur te zien.</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -217,6 +223,14 @@
           <tr><th>Kenteken</th><th>Naam monteur</th><th>E-mailadres</th><th class="auto">APK geldig tot</th><th class="auto">Status</th></tr>
         </thead>
         <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <h3 class="sub">Garage per merk</h3>
+    <p>Ook één keer invullen. Het merk haalt het systeem zelf bij de RDW, dus elke monteur krijgt vanzelf de juiste garage in zijn mail.</p>
+    <div class="table-wrap">
+      <table class="garages">
+        <thead><tr><th>Merk</th><th>Garage voor APK-afspraak</th><th>Telefoon</th><th>Online afspraak</th></tr></thead>
+        <tbody id="garages"></tbody>
       </table>
     </div>
   </section>
@@ -297,17 +311,47 @@
   // Voorbeeldregels. Kentekens met klinkers bestaan in Nederland niet,
   // dus deze verwijzen niet naar een echte auto.
   const rijen = [
-    { kenteken: "UA-123-E", naam: "Jan de Vries",  email: "j.devries@voorbeeld.nl", datum: plusDagen(214) },
-    { kenteken: "OE-45-AI", naam: "Sanne Bakker",  email: "s.bakker@voorbeeld.nl",  datum: plusDagen(23)  },
-    { kenteken: "IA-678-O", naam: "Pieter Mulder", email: "p.mulder@voorbeeld.nl",  datum: plusDagen(5)   },
+    { kenteken: "UA-123-E", naam: "Jan de Vries",  email: "j.devries@voorbeeld.nl", merk: "VOLKSWAGEN", auto: "Volkswagen Caddy",       datum: plusDagen(214) },
+    { kenteken: "OE-45-AI", naam: "Sanne Bakker",  email: "s.bakker@voorbeeld.nl",  merk: "OPEL",       auto: "Opel Vivaro",            datum: plusDagen(23)  },
+    { kenteken: "IA-678-O", naam: "Pieter Mulder", email: "p.mulder@voorbeeld.nl",  merk: "VOLKSWAGEN", auto: "Volkswagen Transporter", datum: plusDagen(5)   },
   ];
+
+  // Garage per merk (RDW-merknaam). Gegevens van de sites van de dealers, 09-10-2026.
+  const garages = {
+    VOLKSWAGEN: { merk: "Volkswagen", naam: "Van den Brug Heerenveen", tel: "0513 633 054",
+                  url: "https://www.vandenbrug.nl/werkplaatsplanner/vehicle", label: "vandenbrug.nl" },
+    OPEL:       { merk: "Opel", naam: "Haaima Heerenveen", tel: "0513 62 21 00",
+                  url: "https://www.haaima.nl/werkplaatsafspraak/", label: "haaima.nl" },
+  };
+
+  function link(g) {
+    const a = el("a", "", g.label + "/afspraak");
+    a.href = g.url; a.target = "_blank"; a.rel = "noopener";
+    return a;
+  }
+
+  function toonGarages() {
+    const tbody = document.getElementById("garages");
+    Object.values(garages).forEach((g) => {
+      const tr = el("tr");
+      const td4 = el("td"); td4.append(link(g));
+      [el("td", "", g.merk), el("td", "", g.naam), el("td", "", g.tel), td4].forEach((td, i) => {
+        td.dataset.label = ["Merk", "Garage", "Telefoon", "Online afspraak"][i];
+        tr.append(td);
+      });
+      tbody.append(tr);
+    });
+  }
+
+  let gekozen = null;
 
   function toonLijst(nieuw) {
     const tbody = document.getElementById("rows");
     tbody.textContent = "";
     rijen.slice().sort((a, b) => a.datum - b.datum).forEach((r) => {
       const st = status(dagenTot(r.datum));
-      const tr = el("tr", r === nieuw ? "new" : "");
+      const tr = el("tr", (r === nieuw ? "new " : "") + (r === gekozen ? "gekozen" : ""));
+      tr.addEventListener("click", () => { toonMail(r); toonLijst(); });
       const td1 = el("td"); td1.append(el("span", "plate", r.kenteken));
       const td2 = el("td", "", r.naam);
       const td3 = el("td", "mail-cell", r.email);
@@ -320,7 +364,9 @@
     });
   }
 
-  function toonMail(r, auto) {
+  function toonMail(r) {
+    gekozen = r;
+    const auto = r.auto;
     const dagen = dagenTot(r.datum);
     const verlopen = dagen < 0;
     // De eerstvolgende herinnering; is ook die van 7 dagen al geweest, dan die.
@@ -339,8 +385,19 @@
       el("p", "", "Hoi" + voornaam + ","),
       el("p", "", verlopen
         ? "De APK van je auto" + welkeAuto + " is verlopen op " + datumNL(r.datum) + ". Rijd er niet meer mee de weg op en plan zo snel mogelijk een keuring."
-        : "De APK van je auto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak. Rijd je een leaseauto, dan bij de officiële merkdealer; vaak kan dat samen met een onderhoudsbeurt."),
-      el("p", "", "Leaseauto van Wittebrug en vragen? Bel de berijdersdesk: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."),
+        : "De APK van je auto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak; vaak kan de APK samen met een onderhoudsbeurt."));
+    const g = garages[r.merk];
+    if (g) {
+      const p = el("p", "", "Afspraak maken bij " + g.naam + ": bel " + g.tel + " of plan online via ");
+      p.append(link(g), ".");
+      body.append(p);
+    } else {
+      body.append(el("p", "", "Maak een afspraak bij je eigen garage."));
+    }
+    if (r.merk === "VOLKSWAGEN") {
+      body.append(el("p", "", "Vragen over je leaseauto? Bel de berijdersdesk van Wittebrug: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."));
+    }
+    body.append(
       el("p", "", "Is de auto al gekeurd? Dan hoef je niets te doen. Zodra de RDW de nieuwe datum heeft, stoppen deze herinneringen vanzelf."),
       el("p", "who", "Dit is een automatisch bericht van het wagenpark.")
     );
@@ -413,10 +470,12 @@
       let r = rijen.find((x) => x.kenteken === kent);
       if (!r) { r = { kenteken: kent, naam: "Jij", email: "jij@voorbeeld.nl", eigen: true }; rijen.push(r); }
       r.datum = new Date(j, m - 1, d);
+      r.merk = merk.toUpperCase();
+      r.auto = auto;
       msg.textContent = "";
       toonResultaat(r, auto);
+      toonMail(r);
       toonLijst(r);
-      toonMail(r, auto);
     } catch (err) {
       msg.className = "msg err";
       msg.textContent = "De RDW is nu niet bereikbaar. Probeer het over een paar minuten opnieuw.";
@@ -425,8 +484,9 @@
     }
   });
 
+  toonGarages();
+  toonMail(rijen[0]);
   toonLijst();
-  toonMail(rijen[0], "");
 })();
 </script>
 </body>
