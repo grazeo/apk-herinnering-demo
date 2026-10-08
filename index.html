@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APK-herinnering leaseauto's</title>
-<meta name="description" content="Voorbeeld: APK-datums van leaseauto's automatisch ophalen bij RDW en berijders op tijd herinneren.">
+<title>APK-herinnering bedrijfsauto's</title>
+<meta name="description" content="Voorbeeld: APK-datums van bedrijfsauto's automatisch ophalen bij RDW en monteurs op tijd herinneren.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23f2c200'/><text x='16' y='22' font-size='13' font-family='Arial' font-weight='700' text-anchor='middle' fill='%23111'>APK</text></svg>">
 <style>
   :root {
@@ -17,6 +17,7 @@
     --accent-text: #ffffff;
     --plate: #f2c200;
     --plate-text: #111111;
+    --auto-bg: #edf3fa;
     --ok-bg: #e3f4e8;   --ok: #1d7a3a;
     --soon-bg: #fff1dc; --soon: #a85b00;
     --due-bg: #fde4e2;  --due: #b42318;
@@ -30,6 +31,7 @@
       --soon-bg: #3d2a0e; --soon: #ffc06b;
       --due-bg: #45191a;  --due: #ff9b93;
       --gone-bg: #e5534b; --gone: #1a0a09;
+      --auto-bg: #1c2733;
     }
   }
   :root[data-theme="dark"] {
@@ -39,6 +41,7 @@
     --soon-bg: #3d2a0e; --soon: #ffc06b;
     --due-bg: #45191a;  --due: #ff9b93;
     --gone-bg: #e5534b; --gone: #1a0a09;
+    --auto-bg: #1c2733;
   }
 
   * { box-sizing: border-box; }
@@ -102,7 +105,26 @@
   .list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   .list-head span { color: var(--muted); font-size: .9rem; }
   .table-wrap { overflow-x: auto; margin: 0 -4px; }
-  table { width: 100%; border-collapse: collapse; font-size: .95rem; min-width: 520px; }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; min-width: 640px; }
+  th.g { font-size: .8rem; letter-spacing: .02em; text-transform: uppercase; border-bottom: 0; padding-bottom: 4px; }
+  th.g-auto, th.auto, td.auto { background: var(--auto-bg); }
+  th.g-in { color: var(--accent); }
+  .mail-cell { color: var(--muted); font-size: .88rem; }
+
+  /* Drie stappen */
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+  .stap { border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stap.jij { border: 2px solid var(--accent); }
+  .stap b { display: block; margin: 6px 0 4px; }
+  .stap p { margin: 0; font-size: .95rem; color: var(--muted); }
+  .stap.jij p { color: var(--text); }
+  .nr {
+    display: inline-flex; width: 30px; height: 30px; border-radius: 50%; align-items: center; justify-content: center;
+    font-weight: 700; background: var(--auto-bg); color: var(--text);
+  }
+  .stap.jij .nr { background: var(--accent); color: var(--accent-text); }
+  .verschil { margin: 0; padding-left: 20px; }
+  .verschil li { margin-bottom: 8px; }
   th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid var(--line); }
   th { font-size: .82rem; color: var(--muted); font-weight: 600; }
   tr.new td { animation: flash 2.4s ease-out; }
@@ -133,17 +155,33 @@
     .card { padding: 18px 16px; }
     button { width: 100%; }
     .plate-input { max-width: none; }
-    table { min-width: 0; font-size: .88rem; }
-    th, td { padding: 10px 4px; }
-    th:nth-child(2), td:nth-child(2) { display: none; }
+    .flow { grid-template-columns: 1fr; }
+    table { min-width: 0; }
+    table, tbody, tr, td { display: block; }
+    thead { display: none; }
+    tr { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+    td { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding: 9px 12px; text-align: right; }
+    td:last-child { border-bottom: 0; }
+    td::before { content: attr(data-label); color: var(--muted); font-size: .85rem; text-align: left; }
+    td.auto::before { content: attr(data-label) " ↻"; }
   }
 </style>
 </head>
 <body>
 <main>
   <span class="tag">VOORBEELD</span>
-  <h1>APK-herinnering voor leaseauto's</h1>
-  <p class="lead">Nooit meer een verlopen APK. Per auto vul je één keer het kenteken en het mailadres van de berijder in. Daarna gaat alles vanzelf.</p>
+  <h1>APK-herinnering voor bedrijfsauto's</h1>
+  <p class="lead">Nooit meer een verlopen APK. Per auto vul je één keer het kenteken, de naam van de monteur en zijn e-mailadres in. Daarna gaat alles vanzelf.</p>
+
+  <section class="card">
+    <h2>Het enige wat er moet gebeuren</h2>
+    <div class="flow">
+      <div class="stap jij"><span class="nr">1</span><b>Eén keer invullen</b><p>Per auto: kenteken, naam van de monteur en e-mailadres. Dat is alles.</p></div>
+      <div class="stap"><span class="nr">2</span><b>Elke dag vanzelf</b><p>Het systeem haalt de APK-datum op bij de RDW. Ook na een keuring, zonder dat iemand iets bijwerkt.</p></div>
+      <div class="stap"><span class="nr">3</span><b>Op tijd een seintje</b><p>De monteur krijgt 30, 14 en 7 dagen vooraf een mail. De wagenparkbeheerder krijgt elke maand een overzicht.</p></div>
+    </div>
+    <p class="hint">Komt er een auto bij of gaat er een weg? Dan voeg je één regel toe of haal je hem weg.</p>
+  </section>
 
   <section class="card">
     <h2>Probeer het zelf</h2>
@@ -168,20 +206,23 @@
 
   <section class="card">
     <div class="list-head">
-      <h2>Zo ziet de lijst eruit in Teams</h2>
+      <h2>De lijst in Teams</h2>
       <span>Voorbeeldgegevens</span>
     </div>
-    <p>Kenteken en berijder vul je één keer in. De APK-datum en de kleur worden elke dag vanzelf bijgewerkt, ook na een keuring.</p>
+    <p>Dit is de enige pagina die iemand ooit invult. De blauwe kolommen vullen zichzelf, elke dag opnieuw.</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Kenteken</th><th>Berijder</th><th>APK geldig tot</th><th>Status</th></tr></thead>
+        <thead>
+          <tr><th class="g g-in" colspan="3">✎ Eén keer invullen</th><th class="g g-auto" colspan="2">↻ Vult zichzelf</th></tr>
+          <tr><th>Kenteken</th><th>Naam monteur</th><th>E-mailadres</th><th class="auto">APK geldig tot</th><th class="auto">Status</th></tr>
+        </thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
   </section>
 
   <section class="card">
-    <h2>Deze mail krijgt de berijder</h2>
+    <h2>Deze mail krijgt de monteur</h2>
     <p>30, 14 en 7 dagen voor de vervaldatum. Zonder dat iemand eraan hoeft te denken.</p>
     <div class="mail">
       <div class="mail-head">
@@ -195,14 +236,21 @@
   </section>
 
   <section class="card">
-    <h2>Hoe het werkt</h2>
+    <h2>Wat is er anders dan nu?</h2>
+    <ul class="verschil">
+      <li>Nu stuurt de leasemaatschappij één brief naar het huisadres. Komt die niet aan of raakt hij zoek, dan weet niemand het. Dit systeem mailt drie keer naar het werkadres.</li>
+      <li>Auto's die niet via de leasemaatschappij lopen, krijgen nu helemaal geen herinnering. Die gaan hier gewoon mee.</li>
+      <li>De wagenparkbeheerder ziet zelf welke auto's eraan komen, in plaats van het achteraf te horen.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Achter de schermen</h2>
     <ol class="steps">
-      <li>Alles staat in een lijst in Microsoft Teams, in de eigen omgeving van het bedrijf.</li>
+      <li>De lijst staat in Microsoft Teams, in de eigen omgeving van KIS. Niet bij een externe partij.</li>
       <li>Elke ochtend haalt Power Automate per kenteken de actuele APK-datum op bij de RDW.</li>
-      <li>De berijder krijgt 30, 14 en 7 dagen vooraf een herinnering. Lukt dat een dag niet, dan gaat hij de dag erna alsnog.</li>
-      <li>De wagenparkbeheerder krijgt één keer per maand een overzicht van alle auto's die binnen 60 dagen verlopen.</li>
+      <li>Lukt een herinnering een dag niet, dan gaat hij de dag erna alsnog. Nooit dubbel.</li>
     </ol>
-    <p style="margin-top:14px"><b>Wat is er anders dan nu?</b> Nu stuurt de leasemaatschappij één brief naar het huisadres. Die raakt makkelijk zoek, bijvoorbeeld na een verhuizing. Dit systeem mailt drie keer naar het werkadres, en de wagenparkbeheerder ziet zelf welke auto's eraan komen.</p>
   </section>
 
   <footer>
@@ -249,9 +297,9 @@
   // Voorbeeldregels. Kentekens met klinkers bestaan in Nederland niet,
   // dus deze verwijzen niet naar een echte auto.
   const rijen = [
-    { kenteken: "UA-123-E", berijder: "Jan de Vries",  datum: plusDagen(214) },
-    { kenteken: "OE-45-AI", berijder: "Sanne Bakker",  datum: plusDagen(23)  },
-    { kenteken: "IA-678-O", berijder: "Pieter Mulder", datum: plusDagen(5)   },
+    { kenteken: "UA-123-E", naam: "Jan de Vries",  email: "j.devries@voorbeeld.nl", datum: plusDagen(214) },
+    { kenteken: "OE-45-AI", naam: "Sanne Bakker",  email: "s.bakker@voorbeeld.nl",  datum: plusDagen(23)  },
+    { kenteken: "IA-678-O", naam: "Pieter Mulder", email: "p.mulder@voorbeeld.nl",  datum: plusDagen(5)   },
   ];
 
   function toonLijst(nieuw) {
@@ -261,10 +309,13 @@
       const st = status(dagenTot(r.datum));
       const tr = el("tr", r === nieuw ? "new" : "");
       const td1 = el("td"); td1.append(el("span", "plate", r.kenteken));
-      const td2 = el("td", r.eigen ? "" : "who", r.berijder);
-      const td3 = el("td", "", datumNL(r.datum));
-      const td4 = el("td"); td4.append(el("span", "pill " + st.cls, st.label));
-      tr.append(td1, td2, td3, td4);
+      const td2 = el("td", "", r.naam);
+      const td3 = el("td", "mail-cell", r.email);
+      const td4 = el("td", "auto", datumNL(r.datum));
+      const td5 = el("td", "auto"); td5.append(el("span", "pill " + st.cls, st.label));
+      ["Kenteken", "Naam monteur", "E-mailadres", "APK geldig tot", "Status"]
+        .forEach((l, i) => [td1, td2, td3, td4, td5][i].dataset.label = l);
+      tr.append(td1, td2, td3, td4, td5);
       tbody.append(tr);
     });
   }
@@ -275,21 +326,21 @@
     // De eerstvolgende herinnering; is ook die van 7 dagen al geweest, dan die.
     const v = [30, 14, 7].find((x) => x <= dagen) || 7;
     const verstuurd = verlopen ? vandaag : new Date(r.datum.getTime() - v * DAG);
-    document.getElementById("m-to").textContent = r.eigen ? "jij@voorbeeld.nl" : "j.devries@voorbeeld.nl";
+    document.getElementById("m-to").textContent = r.email;
     document.getElementById("m-date").textContent = datumNL(verstuurd);
     document.getElementById("m-subject").textContent = verlopen
       ? "APK van " + r.kenteken + " is verlopen"
       : "APK van " + r.kenteken + " verloopt over " + v + " dagen";
     const body = document.getElementById("m-body");
     body.textContent = "";
-    const voornaam = r.eigen ? "" : " " + r.berijder.split(" ")[0];
+    const voornaam = r.eigen ? "" : " " + r.naam.split(" ")[0];
     const welkeAuto = auto ? " (" + auto + ", " + r.kenteken + ")" : " " + r.kenteken;
     body.append(
       el("p", "", "Hoi" + voornaam + ","),
       el("p", "", verlopen
-        ? "De APK van je leaseauto" + welkeAuto + " is verlopen op " + datumNL(r.datum) + ". Rijd er niet meer mee de weg op en plan zo snel mogelijk een keuring."
-        : "De APK van je leaseauto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak bij de officiële merkdealer. Vaak kan dat samen met een onderhoudsbeurt."),
-      el("p", "", "Vragen? Bel de berijdersdesk van Wittebrug: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."),
+        ? "De APK van je auto" + welkeAuto + " is verlopen op " + datumNL(r.datum) + ". Rijd er niet meer mee de weg op en plan zo snel mogelijk een keuring."
+        : "De APK van je auto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak. Rijd je een leaseauto, dan bij de officiële merkdealer; vaak kan dat samen met een onderhoudsbeurt."),
+      el("p", "", "Leaseauto van Wittebrug en vragen? Bel de berijdersdesk: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."),
       el("p", "", "Is de auto al gekeurd? Dan hoef je niets te doen. Zodra de RDW de nieuwe datum heeft, stoppen deze herinneringen vanzelf."),
       el("p", "who", "Dit is een automatisch bericht van het wagenpark.")
     );
@@ -304,7 +355,7 @@
     document.getElementById("r-big").textContent =
       dagen < 0 ? "APK verlopen op " + datumNL(r.datum) : "APK geldig tot " + datumNL(r.datum);
     document.getElementById("r-sub").textContent =
-      dagen < 0 ? "Dat is " + (-dagen) + (dagen === -1 ? " dag" : " dagen") + " geleden. De berijder had drie herinneringen gekregen."
+      dagen < 0 ? "Dat is " + (-dagen) + (dagen === -1 ? " dag" : " dagen") + " geleden. De monteur had drie herinneringen gekregen."
       : dagen === 0 ? "Dat is vandaag."
       : "Nog " + dagen + (dagen === 1 ? " dag." : " dagen.");
     const ul = document.getElementById("r-reminders");
@@ -360,7 +411,7 @@
       const kent = opmaak(k);
       input.value = kent;
       let r = rijen.find((x) => x.kenteken === kent);
-      if (!r) { r = { kenteken: kent, berijder: "Jij", eigen: true }; rijen.push(r); }
+      if (!r) { r = { kenteken: kent, naam: "Jij", email: "jij@voorbeeld.nl", eigen: true }; rijen.push(r); }
       r.datum = new Date(j, m - 1, d);
       msg.textContent = "";
       toonResultaat(r, auto);
