@@ -199,6 +199,7 @@
       <li>De berijder krijgt 30, 14 en 7 dagen vooraf een herinnering. Lukt dat een dag niet, dan gaat hij de dag erna alsnog.</li>
       <li>De wagenparkbeheerder krijgt één keer per maand een overzicht van alle auto's die binnen 60 dagen verlopen.</li>
     </ol>
+    <p style="margin-top:14px"><b>Wat is er anders dan nu?</b> Nu stuurt de leasemaatschappij één brief naar het huisadres. Die raakt makkelijk zoek, bijvoorbeeld na een verhuizing. Dit systeem mailt drie keer naar het werkadres, en de wagenparkbeheerder ziet zelf welke auto's eraan komen.</p>
   </section>
 
   <footer>
@@ -284,7 +285,8 @@
       el("p", "", "Hoi" + voornaam + ","),
       el("p", "", verlopen
         ? "De APK van je leaseauto" + welkeAuto + " is verlopen op " + datumNL(r.datum) + ". Rijd er niet meer mee de weg op en plan zo snel mogelijk een keuring."
-        : "De APK van je leaseauto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak bij de dealer."),
+        : "De APK van je leaseauto" + welkeAuto + " verloopt op " + datumNL(r.datum) + ". Plan op tijd een afspraak bij de officiële merkdealer. Vaak kan dat samen met een onderhoudsbeurt."),
+      el("p", "", "Vragen? Bel de berijdersdesk van Wittebrug: 033-4549555, of mail naar Berijdersdesk@vwpfs.nl."),
       el("p", "", "Is de auto al gekeurd? Dan hoef je niets te doen. Zodra de RDW de nieuwe datum heeft, stoppen deze herinneringen vanzelf."),
       el("p", "who", "Dit is een automatisch bericht van het wagenpark.")
     );
